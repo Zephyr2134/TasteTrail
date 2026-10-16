@@ -1,6 +1,4 @@
 using EPiServer.Cms.UI.AspNetIdentity;
-using EPiServer.DataAbstraction;
-using EPiServer.DataAbstraction.RuntimeModel;
 using EPiServer.DependencyInjection;
 using EPiServer.Scheduler;
 using EPiServer.Web.Routing;
@@ -40,47 +38,6 @@ namespace TasteTrail
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapContent();
-
-                // Temporary diagnostic, remove when done
-                if (env.IsDevelopment())
-                {
-                    endpoints.MapGet("/diag/contenttypes", (
-                        IConfiguration configuration,
-                        ContentTypeModelRepository modelRepository,
-                        IContentTypeRepository contentTypeRepository) =>
-                    {
-                        string? connectionString = configuration.GetConnectionString("EPiServerDB");
-
-                        var scannedModels = modelRepository
-                            .List()
-                            .Select(m => m.ModelType.FullName ?? m.Name)
-                            .OrderBy(name => name)
-                            .ToList();
-
-                        var typesInDatabase = contentTypeRepository
-                            .List()
-                            .Select(t => $"{t.Name} ({t.GUID}) -> {t.ModelType?.FullName ?? "no model"}")
-                            .OrderBy(name => name)
-                            .ToList();
-
-                        var loadedAssemblies = AppDomain.CurrentDomain
-                            .GetAssemblies()
-                            .Select(a => a.GetName().Name ?? string.Empty)
-                            .Where(name => !name.StartsWith("System") && !name.StartsWith("Microsoft"))
-                            .OrderBy(name => name)
-                            .ToList();
-
-                        return Results.Json(new
-                        {
-                            Environment = env.EnvironmentName,
-                            DataDirectory = AppDomain.CurrentDomain.GetData("DataDirectory"),
-                            ConnectionString = connectionString,
-                            ScannedModels = scannedModels,
-                            TypesInDatabase = typesInDatabase,
-                            LoadedAssemblies = loadedAssemblies
-                        }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-                    });
-                }
             });
         }
     }
